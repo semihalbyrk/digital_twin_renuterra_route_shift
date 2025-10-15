@@ -11,51 +11,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --color-primary: rgb(11, 43, 81);
-            --color-secondary: rgb(59, 169, 53);
-            --text-dark: rgb(52, 64, 84);
-            --text-medium: rgb(102, 112, 133);
-            --bg-light: #f8f9fa;
+            --color-primary: #0b2b51;
+            --color-secondary: #3ba935;
+            --text-light: #f9fafb;
+            --text-medium: #667085;
+            --text-dark: #344054;
+            --bg-main: #0b2b51;
+            --bg-card: #ffffff;
+            --bg-kpi: #f9fafb;
+            --bg-better: #e1f5e0;
+            --bg-worse: #fbe6e6;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-light); color: var(--text-dark); }
-        .tab-active { border-color: var(--color-primary); color: var(--color-primary); background-color: white; border-bottom-color: white; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-light); }
+        .tab-active { border-color: var(--color-secondary); color: var(--color-secondary); background-color: var(--bg-card); border-bottom-color: var(--bg-card); }
         .tab-inactive { border-color: transparent; color: var(--text-medium); }
-        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 1px.5px 0 rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.05); padding: 1.5rem; }
+        .card { background-color: var(--bg-card); color: var(--text-dark); border-radius: 0.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 1.5rem; }
         .card-header { font-size: 1.125rem; font-weight: 600; color: var(--text-dark); border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; margin-bottom: 1rem; }
         .label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-dark); margin-bottom: 0.25rem; }
-        .input { width: 100%; border-radius: 0.375rem; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+        .input { width: 100%; border-radius: 0.375rem; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--text-dark); }
         .input-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
         .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .input-group-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
         .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600; text-align: center; transition: background-color 0.2s; }
-        .btn-primary { background-color: var(--color-primary); color: white; }
-        .btn-primary:hover { background-color: rgb(21, 53, 91); }
+        .btn-primary { background-color: var(--color-secondary); color: white; }
+        .btn-primary:hover { background-color: #32932f; }
         .btn-secondary { background-color: #e5e7eb; color: var(--text-dark); }
-        .btn-danger { background-color: #ef4444; color: white; }
+        .btn-danger { background-color: #fee2e2; color: #ef4444; border: none; }
+        .btn-danger:hover { background-color: #fecaca; }
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
-        .kpi-card { background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; text-align: center; position: relative; }
+        .kpi-card { background-color: var(--bg-kpi); padding: 1rem; border-radius: 0.5rem; text-align: center; position: relative; transition: background-color 0.3s; }
         .kpi-label { font-size: 0.875rem; color: var(--text-medium); margin-bottom: 0.25rem; }
-        .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--color-secondary); }
         .delta-positive { color: #dc2626; }
         .delta-negative { color: var(--color-secondary); }
         .delta-neutral { color: var(--text-medium); }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--color-primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--color-secondary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         .tooltip { position: relative; display: inline-block; cursor: pointer; }
         .tooltip .tooltiptext { visibility: hidden; width: 220px; background-color: var(--text-dark); color: #fff; text-align: center; border-radius: 6px; padding: 5px 10px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s; font-size: 0.75rem; font-weight: 400; }
         .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        h1, h2, h3 { color: var(--text-light); }
+        .card h1, .card h2, .card h3, .card p, .card span, .card div, .card table { color: var(--text-dark); }
+        .card .text-gray-500 { color: var(--text-medium) !important; }
+        .prose { color: var(--text-dark); }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-screen-xl mx-auto space-y-8">
         <header class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <img src="data:image/png;base64,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" alt="Evreka Logo" class="h-10">
-                <h1 class="text-2xl font-bold text-gray-800">Route Shift Analysis</h1>
+                <img id="logo" alt="Evreka Logo" class="h-10">
+                <h1 class="text-2xl font-bold">Route Shift Analysis</h1>
             </div>
-            <p class="text-gray-600 text-sm hidden md:block">Compare baseline vs. scenario to analyze impacts on cost, time, and efficiency.</p>
+            <p class="text-sm hidden md:block">Compare baseline vs. scenario to analyze impacts on cost, time, and efficiency.</p>
         </header>
         
         <main class="space-y-8">
@@ -213,7 +223,7 @@
             <div id="loaderContainer" class="hidden h-full items-center justify-center py-20">
                 <div class="text-center">
                     <div class="loader mx-auto"></div>
-                    <p class="mt-4 text-gray-600 font-semibold">Running simulations, please wait...</p>
+                    <p class="mt-4 text-gray-300 font-semibold">Running simulations, please wait...</p>
                 </div>
             </div>
             <div id="resultsContainer" class="hidden space-y-8">
@@ -238,9 +248,9 @@
                 </div>
             </div>
             <div id="welcomeMessage" class="h-full flex items-center justify-center py-20">
-                <div class="text-center text-gray-500">
+                <div class="text-center text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v6m-8-12V7a2 2 0 012-2h4a2 2 0 012 2v2m-6 8h.01M12 12h.01M12 16h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <h3 class="mt-2 text-lg font-medium">Ready to Analyze</h3><p class="mt-1">Adjust parameters and click "Run Simulation" to see the results.</p>
+                    <h3 class="mt-2 text-lg font-medium text-gray-200">Ready to Analyze</h3><p class="mt-1">Adjust parameters and click "Run Simulation" to see the results.</p>
                 </div>
             </div>
 
@@ -280,6 +290,7 @@
 
 <script>
 // --- DATA ---
+const logoBase64 = "data:image/png;base64,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";
 const routeData = {
     depotStart: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
     depotEnd: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
@@ -344,7 +355,7 @@ class IntervalManager {
         this.fields = fields;
         this.addBtn.addEventListener('click', () => this.addRow());
         this.container.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-row')) {
+            if (e.target.closest('.delete-row')) {
                 e.target.closest('.interval-row').remove();
                 this.validate();
             }
@@ -357,7 +368,7 @@ class IntervalManager {
         row.className = 'flex items-center gap-2 interval-row';
         row.innerHTML = this.fields.map(field => 
             `<input type="${field.type}" class="input text-sm" data-field="${field.id}" value="${data[field.id] || ''}" ${field.step ? `step="${field.step}"` : ''} placeholder="${field.placeholder || ''}">`
-        ).join('') + `<button class="btn-danger p-1 rounded-full w-6 h-6 text-xs delete-row">X</button>`;
+        ).join('') + `<button class="delete-row btn btn-danger p-0 h-8 w-8 flex items-center justify-center rounded-md"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>`;
         this.container.appendChild(row);
         this.validate();
     }
@@ -631,23 +642,25 @@ function updateUI(baseline, scenario, params) {
         { key: 'disposalCount', label: 'Disposals', lowerIsBetter: true }, { key: 'failCount', label: 'Failures', lowerIsBetter: true },
         { key: 'wastePerHour', label: 'Waste / Hour', lowerIsBetter: false }, { key: 'wastePerKm', label: 'Waste / Km', lowerIsBetter: false },
     ];
-    const costBreakdown = [{ key: 'kmCost', label: 'KM Cost' }, { key: 'hourCost', label: 'Hour Cost' }, { key: 'nightCost', label: 'Night Premium' }, { key: 'failCost', label: 'Failure Penalty' }];
+    const costBreakdown = [{ key: 'kmCost', label: 'KM Cost', lowerIsBetter: true }, { key: 'hourCost', label: 'Hour Cost', lowerIsBetter: true }, { key: 'nightCost', label: 'Night Premium', lowerIsBetter: true }, { key: 'failCost', label: 'Failure Penalty', lowerIsBetter: true }];
     
+    const allKpis = [...kpiConfig, ...costBreakdown];
+
     const renderKpiGrid = (containerId, result) => {
         const container = document.getElementById(containerId);
-        container.innerHTML = [...kpiConfig, ...costBreakdown].map(({key, label, tooltip}) => {
+        container.innerHTML = allKpis.map(({key, label, tooltip}) => {
             let labelHtml = label;
             if (tooltip) {
                 labelHtml = `<span class="tooltip">${label} ⓘ<span class="tooltiptext">${tooltip}</span></span>`;
             }
-            return `<div class="kpi-card"><div class="kpi-label">${labelHtml}</div><div class="kpi-value">${formatValue(result[key], key, params.currency)}</div></div>`;
+            return `<div class="kpi-card" data-kpi-key="${key}"><div class="kpi-label">${labelHtml}</div><div class="kpi-value">${formatValue(result[key], key, params.currency)}</div></div>`;
         }).join('');
     };
     
     renderKpiGrid('baselineKpiGrid', baseline);
     renderKpiGrid('scenarioKpiGrid', scenario);
     
-    document.getElementById('comparisonTableBody').innerHTML = [...kpiConfig, ...costBreakdown].map(({key, label, lowerIsBetter}) => {
+    document.getElementById('comparisonTableBody').innerHTML = allKpis.map(({key, label, lowerIsBetter}) => {
         const valB = typeof baseline[key] === 'object' ? baseline[key].avg : baseline[key];
         const valS = typeof scenario[key] === 'object' ? scenario[key].avg : scenario[key];
         const delta = valS - valB;
@@ -655,6 +668,34 @@ function updateUI(baseline, scenario, params) {
         if (Math.abs(delta) > 0.01) deltaClass = (delta > 0) ? (lowerIsBetter ? 'delta-positive' : 'delta-negative') : (lowerIsBetter ? 'delta-negative' : 'delta-positive');
         return `<tr class="border-b"><td class="p-2 font-medium">${label}</td><td class="p-2 text-right">${formatValue(baseline[key], key, params.currency)}</td><td class="p-2 text-right">${formatValue(scenario[key], key, params.currency)}</td><td class="p-2 text-right font-semibold ${deltaClass}">${delta >= 0 ? '+' : ''}${formatValue(delta, key, params.currency)}</td></tr>`;
     }).join('');
+
+    // Color KPI cards
+    allKpis.forEach(({ key, lowerIsBetter }) => {
+        const valB = typeof baseline[key] === 'object' ? baseline[key].avg : baseline[key];
+        const valS = typeof scenario[key] === 'object' ? scenario[key].avg : scenario[key];
+        
+        const cardB = document.querySelector(`#baselineKpiGrid [data-kpi-key="${key}"]`);
+        const cardS = document.querySelector(`#scenarioKpiGrid [data-kpi-key="${key}"]`);
+
+        if (!cardB || !cardS) return;
+
+        // Reset styles
+        cardB.style.backgroundColor = '';
+        cardS.style.backgroundColor = '';
+
+        if (Math.abs(valB - valS) < 0.01) return; // They are equal
+
+        const bIsBetter = lowerIsBetter ? valB < valS : valB > valS;
+
+        if (bIsBetter) {
+            cardB.style.backgroundColor = 'var(--bg-better)';
+            cardS.style.backgroundColor = 'var(--bg-worse)';
+        } else {
+            cardS.style.backgroundColor = 'var(--bg-better)';
+            cardB.style.backgroundColor = 'var(--bg-worse)';
+        }
+    });
+
 
     renderTimeChart(baseline, scenario);
 }
@@ -685,14 +726,14 @@ function renderTimeChart(baseline, scenario) {
                 {
                     label: 'Baseline',
                     data: baselineData,
-                    backgroundColor: 'rgb(102, 112, 133, 0.8)',
+                    backgroundColor: 'rgba(102, 112, 133, 0.8)',
                     borderColor: 'rgb(102, 112, 133)',
                     borderWidth: 1
                 },
                 {
                     label: 'Scenario',
                     data: scenarioData,
-                    backgroundColor: 'rgb(59, 169, 53, 0.8)',
+                    backgroundColor: 'rgba(59, 169, 53, 0.8)',
                     borderColor: 'rgb(59, 169, 53)',
                     borderWidth: 1
                 }
@@ -704,10 +745,17 @@ function renderTimeChart(baseline, scenario) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Time (Hours)' }
+                    title: { display: true, text: 'Time (Hours)', color: '#667085' },
+                    ticks: { color: '#667085' },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                },
+                x: {
+                    ticks: { color: '#667085' },
+                    grid: { display: false }
                 }
             },
             plugins: {
+                legend: { labels: { color: '#344054' } },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -741,7 +789,9 @@ function setupEventListeners() {
     const switchTabs = (activeTab) => {
         const isParams = activeTab === 'params';
         paramsTabBtn.classList.toggle('tab-active', isParams);
+        paramsTabBtn.classList.toggle('tab-inactive', !isParams);
         stopsTabBtn.classList.toggle('tab-active', !isParams);
+        stopsTabBtn.classList.toggle('tab-inactive', isParams);
         paramsView.classList.toggle('hidden', !isParams);
         stopsView.classList.toggle('hidden', isParams);
     };
@@ -812,6 +862,7 @@ function loadDefaultTrafficSchedule() {
 }
 
 window.addEventListener('load', () => {
+    document.getElementById('logo').src = logoBase64;
     loadDefaultTrafficSchedule();
     disposalManager.loadData([{ start: '00:00', end: '00:00', value: 30 }]);
     setupEventListeners();
