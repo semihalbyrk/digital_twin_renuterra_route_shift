@@ -191,7 +191,7 @@
                     </details>
                     <!-- Break Section -->
                     <details class="border rounded-md p-4">
-                        <summary class="font-semibold cursor-pointer">Vehicle Break</summary>
+                        <summary class="font-semibold cursor-pointer">Break Window</summary>
                         <div class="mt-4 space-y-4 border-t pt-4">
                             <div class="input-group">
                                 <div><label class="label">Break Start</label><input id="breakStart" type="time" class="input" value="12:00"></div>
@@ -261,6 +261,7 @@
                                     <th class="p-2 font-semibold">SERVICE POINT</th>
                                     <th class="p-2 font-semibold">LAT</th>
                                     <th class="p-2 font-semibold">LON</th>
+                                    <th class="p-2 font-semibold">Waste (kg)</th>
                                     <th class="p-2 font-semibold">SERVICE TIME (min)</th>
                                     <th class="p-2 font-semibold">ACTION (Time Window)</th>
                                 </tr>
@@ -298,19 +299,6 @@
                     <h2 class="card-header">Time Breakdown Comparison (Hours)</h2>
                     <div class="h-96">
                         <canvas id="timeChart"></canvas>
-                    </div>
-                </div>
-                 <div class="card">
-                    <h2 class="card-header">Cost Breakdown</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-96 items-center">
-                        <div>
-                            <h3 class="text-center font-medium text-sm text-gray-600 mb-2">Baseline</h3>
-                            <canvas id="costChartBaseline"></canvas>
-                        </div>
-                        <div>
-                            <h3 class="text-center font-medium text-sm text-gray-600 mb-2">Scenario</h3>
-                            <canvas id="costChartScenario"></canvas>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -372,17 +360,17 @@ const allRoutes = [
         endLocation: 'Start/End Location',
         disposalLocation: 'Al Qusais landfill',
         sequence: [
-            { id: "FIRST IVF AND DAY SURGERY CENTRE FZ-LLC / Dubai Health Care City", order: 1, lat: 25.2338, lon: 55.3184, kg: 850 },
-            { id: "FIRST GENOMIX GENE LABORATORY FZ-LLC / Dubai Health Care City", order: 2, lat: 25.2339, lon: 55.3184, kg: 600 },
-            { id: "CLINICA SABAH SPECIALTY HOSPITAL", order: 3, lat: 25.2406, lon: 55.2951, kg: 1200 },
-            { id: "American hospital Dubai Clinic Al Barsha", order: 4, lat: 25.0992, lon: 55.2006, kg: 750 },
-            { id: "Al Zahra Hospital", order: 5, lat: 25.1060, lon: 55.1805, kg: 950 },
-            { id: "American Hospital Dubai Hills", order: 6, lat: 25.1028, lon: 55.2377, kg: 450 },
-            { id: "American Hospital Media City", order: 7, lat: 25.1009, lon: 55.1696, kg: 1500 },
-            { id: "Jumeirah American Clinic / Al Manara Jumeirah", order: 8, lat: 25.1513, lon: 55.2135, kg: 820 },
-            { id: "ALABAMA DENTAL CENTER", order: 9, lat: 25.1550, lon: 55.2166, kg: 900 },
-            { id: "DYNASTY CLINIC L.L.C / Jumeriah Al Safa", order: 10, lat: 25.1659, lon: 55.2329, kg: 1350 },
-            { id: "American hospital Al Khawaneej", order: 11, lat: 25.2345, lon: 55.4731, kg: 880 },
+            { id: "FIRST IVF AND DAY SURGERY CENTRE FZ-LLC / Dubai Health Care City", order: 1, lat: 25.2338, lon: 55.3184, kg: 29.00 },
+            { id: "FIRST GENOMIX GENE LABORATORY FZ-LLC / Dubai Health Care City", order: 2, lat: 25.2339, lon: 55.3184, kg: 6.00 },
+            { id: "CLINICA SABAH SPECIALTY HOSPITAL", order: 3, lat: 25.2406, lon: 55.2951, kg: 101.00 },
+            { id: "American hospital Dubai Clinic Al Barsha", order: 4, lat: 25.0992, lon: 55.2006, kg: 5.00 },
+            { id: "Al Zahra Hospital", order: 5, lat: 25.1060, lon: 55.1805, kg: 0.00 },
+            { id: "American Hospital Dubai Hills", order: 6, lat: 25.1028, lon: 55.2377, kg: 8.00 },
+            { id: "American Hospital Media City", order: 7, lat: 25.1009, lon: 55.1696, kg: 14.00 },
+            { id: "Jumeirah American Clinic / Al Manara Jumeirah", order: 8, lat: 25.1513, lon: 55.2135, kg: 4.00 },
+            { id: "ALABAMA DENTAL CENTER", order: 9, lat: 25.1550, lon: 55.2166, kg: 3.00 },
+            { id: "DYNASTY CLINIC L.L.C / Jumeriah Al Safa", order: 10, lat: 25.1659, lon: 55.2329, kg: 17.00 },
+            { id: "American hospital Al Khawaneej", order: 11, lat: 25.2345, lon: 55.4731, kg: 6.00 },
         ],
         depotStart: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
         depotEnd: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
@@ -400,7 +388,7 @@ const welcomeMessage = document.getElementById('welcomeMessage');
 const routeSelectionView = document.getElementById('routeSelectionView');
 const simulationView = document.getElementById('simulationView');
 
-let timeChart = null, costChartBaseline = null, costChartScenario = null;
+let timeChart = null;
 
 // --- UTILITY FUNCTIONS ---
 const timeToMinutes = (timeStr) => {
@@ -654,6 +642,7 @@ function runSingleSimulation(params) {
         efficiency: (driveMin + serviceMinTotal > 0) ? (serviceMinTotal / (driveMin + serviceMinTotal)) * 100 : 0,
         wastePerHour: totalHours > 0 ? totalKg / totalHours : 0,
         wastePerKm: distanceKm > 0 ? totalKg / distanceKm : 0,
+        capacityUtilization: params.vehicleCapacity > 0 ? (totalKg / params.vehicleCapacity) * 100 : 0,
     };
 }
 
@@ -714,7 +703,7 @@ function formatValue(value, key, currency) {
     if (key.toLowerCase().includes('min')) return minutesToHourMin(value);
     if (key.endsWith('Km')) return value.toFixed(2) + ' km';
     if (key.endsWith('Hours')) return value.toFixed(2);
-    if (key.toLowerCase().includes('efficiency')) return `${value.toFixed(1)}%`;
+    if (key.toLowerCase().includes('efficiency') || key.toLowerCase().includes('utilization')) return `${value.toFixed(1)}%`;
     if (key.startsWith('wastePer')) return `${value.toFixed(1)} kg`;
     return Math.round(value);
 }
@@ -723,6 +712,7 @@ function updateUI(baseline, scenario, params) {
     const kpiConfig = [
         { key: 'totalCost', label: 'Total Cost', lowerIsBetter: true }, { key: 'totalMin', label: 'Total Time', lowerIsBetter: true },
         { key: 'distanceKm', label: 'Distance', lowerIsBetter: true }, { key: 'breakMin', label: 'Break Time', lowerIsBetter: true },
+        { key: 'capacityUtilization', label: 'Capacity Utilization', lowerIsBetter: true, tooltip: "Shows the percentage of the vehicle's total weight capacity used by the end of the route, before disposal." },
         { key: 'efficiency', label: 'Efficiency', lowerIsBetter: false, tooltip: 'Service Time / (Drive Time + Service Time)' },
         { key: 'disposalCount', label: 'Disposals', lowerIsBetter: true }, { key: 'failCount', label: 'Failures', lowerIsBetter: true },
         { key: 'wastePerHour', label: 'Waste / Hour', lowerIsBetter: false }, { key: 'wastePerKm', label: 'Waste / Km', lowerIsBetter: false },
@@ -783,7 +773,7 @@ function updateUI(baseline, scenario, params) {
 
 
     renderTimeChart(baseline, scenario);
-    renderCostCharts(baseline, scenario, params);
+    
 }
 
 function renderTimeChart(baseline, scenario) {
@@ -856,66 +846,6 @@ function renderTimeChart(baseline, scenario) {
             }
         }
     });
-}
-
-function renderCostCharts(baseline, scenario, params) {
-    if (costChartBaseline) costChartBaseline.destroy();
-    if (costChartScenario) costChartScenario.destroy();
-
-    const labels = ['KM Cost', 'Hour Cost', 'Night Premium', 'Failure Penalty'];
-    const colors = ['#0b2b51', '#3ba935', '#667085', '#ef4444'];
-
-    const createChart = (canvasId, data, currency) => {
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        const total = data.reduce((a, b) => a + b, 0);
-
-        return new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: colors,
-                    borderColor: '#fff',
-                    borderWidth: 2,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#344054',
-                            boxWidth: 12,
-                            padding: 15
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return `${label}: ${value.toFixed(2)} ${currency} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    };
-    
-    const getCostData = result => [
-      (typeof result.kmCost === 'object' ? result.kmCost.avg : result.kmCost),
-      (typeof result.hourCost === 'object' ? result.hourCost.avg : result.hourCost),
-      (typeof result.nightCost === 'object' ? result.nightCost.avg : result.nightCost),
-      (typeof result.failCost === 'object' ? result.failCost.avg : result.failCost),
-    ];
-
-    costChartBaseline = createChart('costChartBaseline', getCostData(baseline), params.currency);
-    costChartScenario = createChart('costChartScenario', getCostData(scenario), params.currency);
 }
 
 function filterAndDisplayRoutes() {
@@ -1049,8 +979,9 @@ function populateStopsTable() {
         <tr class="border-b bg-white even:bg-gray-50">
             <td class="p-2">${sp.order || 'N/A'}</td>
             <td class="p-2 font-medium">${sp.id}</td>
-            <td class="p-2 font-mono text-xs">${sp.lat.toFixed(4)}</td>
-            <td class="p-2 font-mono text-xs">${sp.lon.toFixed(4)}</td>
+            <td class="p-2">${sp.lat.toFixed(4)}</td>
+            <td class="p-2">${sp.lon.toFixed(4)}</td>
+            <td class="p-2">${sp.kg || 'N/A'}</td>
             <td class="p-2">${serviceTimeContent}</td>
             <td class="p-2">
                 ${sp.order ? `<div class="flex items-center gap-1">
@@ -1088,5 +1019,4 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
-
 
