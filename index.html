@@ -32,7 +32,7 @@
         .input-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
         .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .input-group-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600; text-align: center; transition: background-color 0.2s; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600; text-align: center; transition: background-color 0.2s; cursor: pointer; }
         .btn-primary { background-color: var(--color-secondary); color: white; }
         .btn-primary:hover { background-color: #32932f; }
         .btn-secondary { background-color: #e5e7eb; color: var(--text-dark); }
@@ -62,13 +62,67 @@
     <div class="max-w-screen-xl mx-auto space-y-8">
         <header class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <img id="logo" alt="Evreka Logo" class="h-10">
                 <h1 class="text-2xl font-bold">Route Shift Analysis</h1>
             </div>
             <p class="text-sm hidden md:block">Compare baseline vs. scenario to analyze impacts on cost, time, and efficiency.</p>
         </header>
+
+        <!-- Route Selection View -->
+        <div id="routeSelectionView">
+            <div class="card">
+                <h2 class="card-header">Select a Route to Analyze</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div>
+                        <label for="filterDate" class="label">Date</label>
+                        <input type="date" id="filterDate" class="input" value="2025-09-23">
+                    </div>
+                    <div>
+                        <label for="filterOperation" class="label">Operation</label>
+                        <select id="filterOperation" class="input">
+                            <option>Dubai UCO Collection</option>
+                            <option>Dubai Roro</option>
+                            <option>Dubai REL</option>
+                            <option>Dubai HAT</option>
+                            <option selected>Dubai Medical</option>
+                            <option>Dubai Bin Ops</option>
+                            <option>Dubai Recycling</option>
+                            <option>Dubai Hazardous Waste</option>
+                        </select>
+                    </div>
+                    <div class="self-end">
+                        <button id="searchRoutesBtn" class="btn btn-primary w-full">Search Routes</button>
+                    </div>
+                </div>
+                <div class="mt-6 overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-3 font-semibold">Route</th>
+                                <th class="p-3 font-semibold">Shift</th>
+                                <th class="p-3 font-semibold">Time</th>
+                                <th class="p-3 font-semibold">Vehicle</th>
+                                <th class="p-3 font-semibold">Employee</th>
+                                <th class="p-3 font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="routeListBody">
+                            <!-- Routes will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
         
-        <main class="space-y-8">
+        <!-- Simulation View -->
+        <main id="simulationView" class="hidden space-y-8">
+            <div class="bg-white p-4 rounded-lg flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800" id="selectedRouteName"></h2>
+                    <p class="text-sm text-gray-500" id="selectedRouteInfo"></p>
+                </div>
+                <button id="changeRouteBtn" class="btn btn-secondary">Change Route</button>
+            </div>
+
             <!-- Controls Section -->
             <div class="card !p-0">
                 <div class="border-b border-gray-200">
@@ -246,8 +300,21 @@
                         <canvas id="timeChart"></canvas>
                     </div>
                 </div>
+                 <div class="card">
+                    <h2 class="card-header">Cost Breakdown</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-96 items-center">
+                        <div>
+                            <h3 class="text-center font-medium text-sm text-gray-600 mb-2">Baseline</h3>
+                            <canvas id="costChartBaseline"></canvas>
+                        </div>
+                        <div>
+                            <h3 class="text-center font-medium text-sm text-gray-600 mb-2">Scenario</h3>
+                            <canvas id="costChartScenario"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="welcomeMessage" class="h-full flex items-center justify-center py-20">
+            <div id="welcomeMessage" class="hidden h-full items-center justify-center py-20">
                 <div class="text-center text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v6m-8-12V7a2 2 0 012-2h4a2 2 0 012 2v2m-6 8h.01M12 12h.01M12 16h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <h3 class="mt-2 text-lg font-medium text-gray-200">Ready to Analyze</h3><p class="mt-1">Adjust parameters and click "Run Simulation" to see the results.</p>
@@ -290,32 +357,50 @@
 
 <script>
 // --- DATA ---
-const logoBase64 = "data:image/png;base64,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";
-const routeData = {
-    depotStart: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
-    depotEnd: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
-    disposal: { id: "Disposal", lat: 25.157123, lon: 55.436789, serviceMin: 'N/A' },
-    sequence: [
-        { id: "FIRST IVF AND DAY SURGERY CENTRE FZ-LLC / Dubai Health Care City", order: 1, lat: 25.2338, lon: 55.3184, kg: 850 },
-        { id: "FIRST GENOMIX GENE LABORATORY FZ-LLC / Dubai Health Care City", order: 2, lat: 25.2339, lon: 55.3184, kg: 600 },
-        { id: "CLINICA SABAH SPECIALTY HOSPITAL", order: 3, lat: 25.2406, lon: 55.2951, kg: 1200 },
-        { id: "American hospital Dubai Clinic Al Barsha", order: 4, lat: 25.0992, lon: 55.2006, kg: 750 },
-        { id: "Al Zahra Hospital", order: 5, lat: 25.1060, lon: 55.1805, kg: 950 },
-        { id: "American Hospital Dubai Hills", order: 6, lat: 25.1028, lon: 55.2377, kg: 450 },
-        { id: "American Hospital Media City", order: 7, lat: 25.1009, lon: 55.1696, kg: 1500 },
-        { id: "Jumeirah American Clinic / Al Manara Jumeirah", order: 8, lat: 25.1513, lon: 55.2135, kg: 820 },
-        { id: "ALABAMA DENTAL CENTER", order: 9, lat: 25.1550, lon: 55.2166, kg: 900 },
-        { id: "DYNASTY CLINIC L.L.C / Jumeriah Al Safa", order: 10, lat: 25.1659, lon: 55.2329, kg: 1350 },
-        { id: "American hospital Al Khawaneej", order: 11, lat: 25.2345, lon: 55.4731, kg: 880 },
-    ]
-};
+const allRoutes = [
+    {
+        name: 'DMED101',
+        date: '2025-09-23',
+        startTime: '07:00',
+        endTime: '21:00',
+        operation: 'Dubai Medical',
+        shift: 'Day Shift',
+        vehicle: 'DXBCC40925',
+        employee: 'Irshad Khan',
+        routePlan: 'DMED101',
+        startLocation: 'Start/End Location',
+        endLocation: 'Start/End Location',
+        disposalLocation: 'Al Qusais landfill',
+        sequence: [
+            { id: "FIRST IVF AND DAY SURGERY CENTRE FZ-LLC / Dubai Health Care City", order: 1, lat: 25.2338, lon: 55.3184, kg: 850 },
+            { id: "FIRST GENOMIX GENE LABORATORY FZ-LLC / Dubai Health Care City", order: 2, lat: 25.2339, lon: 55.3184, kg: 600 },
+            { id: "CLINICA SABAH SPECIALTY HOSPITAL", order: 3, lat: 25.2406, lon: 55.2951, kg: 1200 },
+            { id: "American hospital Dubai Clinic Al Barsha", order: 4, lat: 25.0992, lon: 55.2006, kg: 750 },
+            { id: "Al Zahra Hospital", order: 5, lat: 25.1060, lon: 55.1805, kg: 950 },
+            { id: "American Hospital Dubai Hills", order: 6, lat: 25.1028, lon: 55.2377, kg: 450 },
+            { id: "American Hospital Media City", order: 7, lat: 25.1009, lon: 55.1696, kg: 1500 },
+            { id: "Jumeirah American Clinic / Al Manara Jumeirah", order: 8, lat: 25.1513, lon: 55.2135, kg: 820 },
+            { id: "ALABAMA DENTAL CENTER", order: 9, lat: 25.1550, lon: 55.2166, kg: 900 },
+            { id: "DYNASTY CLINIC L.L.C / Jumeriah Al Safa", order: 10, lat: 25.1659, lon: 55.2329, kg: 1350 },
+            { id: "American hospital Al Khawaneej", order: 11, lat: 25.2345, lon: 55.4731, kg: 880 },
+        ],
+        depotStart: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
+        depotEnd: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
+        disposal: { id: "Disposal", lat: 25.157123, lon: 55.436789, serviceMin: 'N/A' },
+    }
+];
+
+let selectedRouteData = {};
 
 // --- DOM ELEMENTS ---
 const runSimBtn = document.getElementById('runSimBtn');
 const loaderContainer = document.getElementById('loaderContainer');
 const resultsContainer = document.getElementById('resultsContainer');
 const welcomeMessage = document.getElementById('welcomeMessage');
-let timeChart = null;
+const routeSelectionView = document.getElementById('routeSelectionView');
+const simulationView = document.getElementById('simulationView');
+
+let timeChart = null, costChartBaseline = null, costChartScenario = null;
 
 // --- UTILITY FUNCTIONS ---
 const timeToMinutes = (timeStr) => {
@@ -581,7 +666,7 @@ function getParamsFromUI() {
         if (input.value && closeInput.value) timeWindows[id] = { open: timeToMinutes(input.value), close: timeToMinutes(closeInput.value) };
     });
     
-    const newSequence = routeData.sequence
+    const newSequence = selectedRouteData.sequence
       .sort((a,b) => a.order - b.order)
       .map(sp => {
         const input = document.querySelector(`.service-time-input[data-order="${sp.order}"]`);
@@ -602,7 +687,7 @@ function getParamsFromUI() {
         otThreshold: parseFloat(document.getElementById('otThreshold').value), otMultiplier: parseFloat(document.getElementById('otMultiplier').value),
         nightStart: timeToMinutes(document.getElementById('nightStart').value), nightEnd: timeToMinutes(document.getElementById('nightEnd').value), nightMultiplier: parseFloat(document.getElementById('nightMultiplier').value),
         timeWindows, 
-        route: { ...routeData, sequence: newSequence },
+        route: { ...selectedRouteData, sequence: newSequence },
         isMonteCarlo: document.getElementById('runMonteCarlo').checked, mcRuns: parseInt(document.getElementById('mcRuns').value), mcSigma: parseFloat(document.getElementById('mcSigma').value),
     };
 }
@@ -698,6 +783,7 @@ function updateUI(baseline, scenario, params) {
 
 
     renderTimeChart(baseline, scenario);
+    renderCostCharts(baseline, scenario, params);
 }
 
 function renderTimeChart(baseline, scenario) {
@@ -715,9 +801,8 @@ function renderTimeChart(baseline, scenario) {
     const baselineData = getData(baseline);
     const scenarioData = getData(scenario);
 
-    if (timeChart) {
-        timeChart.destroy();
-    }
+    if (timeChart) timeChart.destroy();
+    
     timeChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -773,7 +858,134 @@ function renderTimeChart(baseline, scenario) {
     });
 }
 
+function renderCostCharts(baseline, scenario, params) {
+    if (costChartBaseline) costChartBaseline.destroy();
+    if (costChartScenario) costChartScenario.destroy();
+
+    const labels = ['KM Cost', 'Hour Cost', 'Night Premium', 'Failure Penalty'];
+    const colors = ['#0b2b51', '#3ba935', '#667085', '#ef4444'];
+
+    const createChart = (canvasId, data, currency) => {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const total = data.reduce((a, b) => a + b, 0);
+
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#344054',
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toFixed(2)} ${currency} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    };
+    
+    const getCostData = result => [
+      (typeof result.kmCost === 'object' ? result.kmCost.avg : result.kmCost),
+      (typeof result.hourCost === 'object' ? result.hourCost.avg : result.hourCost),
+      (typeof result.nightCost === 'object' ? result.nightCost.avg : result.nightCost),
+      (typeof result.failCost === 'object' ? result.failCost.avg : result.failCost),
+    ];
+
+    costChartBaseline = createChart('costChartBaseline', getCostData(baseline), params.currency);
+    costChartScenario = createChart('costChartScenario', getCostData(scenario), params.currency);
+}
+
+function filterAndDisplayRoutes() {
+    const date = document.getElementById('filterDate').value;
+    const operation = document.getElementById('filterOperation').value;
+    const tableBody = document.getElementById('routeListBody');
+    tableBody.innerHTML = '';
+
+    const filtered = allRoutes.filter(route => route.date === date && route.operation === operation);
+
+    if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-gray-500">No routes found for the selected filters.</td></tr>`;
+        return;
+    }
+
+    filtered.forEach(route => {
+        const row = `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="p-3">${route.name}</td>
+                <td class="p-3">${route.shift}</td>
+                <td class="p-3">${route.startTime} - ${route.endTime}</td>
+                <td class="p-3">${route.vehicle}</td>
+                <td class="p-3">${route.employee}</td>
+                <td class="p-3">
+                    <button class="btn btn-primary select-route-btn" data-route-name="${route.name}">Select</button>
+                </td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    });
+
+    document.querySelectorAll('.select-route-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const routeName = e.target.dataset.routeName;
+            selectRoute(routeName);
+        });
+    });
+}
+
+function selectRoute(routeName) {
+    selectedRouteData = allRoutes.find(r => r.name === routeName);
+    if (!selectedRouteData) return;
+
+    // Show simulation view, hide selection view
+    routeSelectionView.classList.add('hidden');
+    simulationView.classList.remove('hidden');
+
+    // Populate selected route info
+    document.getElementById('selectedRouteName').textContent = `Simulating Route: ${selectedRouteData.name}`;
+    document.getElementById('selectedRouteInfo').textContent = `${selectedRouteData.operation} | ${selectedRouteData.date} | ${selectedRouteData.shift}`;
+
+    // Set baseline start time
+    document.getElementById('startBaseline').value = selectedRouteData.startTime;
+    
+    // Repopulate stops table for the new route
+    populateStopsTable();
+}
+
+
 function setupEventListeners() {
+    document.getElementById('searchRoutesBtn').addEventListener('click', filterAndDisplayRoutes);
+    
+    document.getElementById('changeRouteBtn').addEventListener('click', () => {
+        simulationView.classList.add('hidden');
+        routeSelectionView.classList.remove('hidden');
+        resultsContainer.classList.add('hidden');
+        welcomeMessage.classList.remove('hidden');
+    });
+
+
     runSimBtn.addEventListener('click', () => {
         resultsContainer.classList.add('hidden');
         welcomeMessage.classList.add('hidden');
@@ -820,7 +1032,12 @@ function setupEventListeners() {
 
 function populateStopsTable() {
     const tableBody = document.getElementById('stopsTableBody');
-    const allStops = [routeData.depotStart, ...routeData.sequence.sort((a,b) => a.order - b.order), routeData.disposal];
+    if (!selectedRouteData || !selectedRouteData.sequence) {
+        tableBody.innerHTML = '';
+        return;
+    }
+    
+    const allStops = [selectedRouteData.depotStart, ...selectedRouteData.sequence.sort((a,b) => a.order - b.order), selectedRouteData.disposal];
     const defaultTime = document.getElementById('defaultServiceTime').value;
 
     tableBody.innerHTML = allStops.map(sp => {
@@ -862,14 +1079,14 @@ function loadDefaultTrafficSchedule() {
 }
 
 window.addEventListener('load', () => {
-    document.getElementById('logo').src = logoBase64;
+    setupEventListeners();
     loadDefaultTrafficSchedule();
     disposalManager.loadData([{ start: '00:00', end: '00:00', value: 30 }]);
-    setupEventListeners();
-    populateStopsTable();
+    filterAndDisplayRoutes();
 });
 
 </script>
 </body>
 </html>
+
 
