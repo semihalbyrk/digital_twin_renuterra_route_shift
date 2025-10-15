@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renuterra - Route Shift Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: rgb(11, 43, 81);
+            --color-secondary: rgb(59, 169, 53);
+            --text-dark: rgb(52, 64, 84);
+            --text-medium: rgb(102, 112, 133);
+            --bg-light: #f8f9fa;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-light); color: var(--text-dark); }
+        .tab-active { border-color: var(--color-primary); color: var(--color-primary); background-color: white; border-bottom-color: white; }
+        .tab-inactive { border-color: transparent; color: var(--text-medium); }
+        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 1px.5px 0 rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.05); padding: 1.5rem; }
+        .card-header { font-size: 1.125rem; font-weight: 600; color: var(--text-dark); border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; margin-bottom: 1rem; }
+        .label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-dark); margin-bottom: 0.25rem; }
+        .input { width: 100%; border-radius: 0.375rem; border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+        .input-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .input-group-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600; text-align: center; transition: background-color 0.2s; }
+        .btn-primary { background-color: var(--color-primary); color: white; }
+        .btn-primary:hover { background-color: rgb(21, 53, 91); }
+        .btn-secondary { background-color: #e5e7eb; color: var(--text-dark); }
+        .btn-danger { background-color: #ef4444; color: white; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+        .kpi-card { background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; text-align: center; position: relative; }
+        .kpi-label { font-size: 0.875rem; color: var(--text-medium); margin-bottom: 0.25rem; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); }
+        .delta-positive { color: #dc2626; }
+        .delta-negative { color: var(--color-secondary); }
+        .delta-neutral { color: var(--text-medium); }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--color-primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        .tooltip { position: relative; display: inline-block; cursor: pointer; }
+        .tooltip .tooltiptext { visibility: hidden; width: 220px; background-color: var(--text-dark); color: #fff; text-align: center; border-radius: 6px; padding: 5px 10px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s; font-size: 0.75rem; font-weight: 400; }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-screen-xl mx-auto space-y-8">
+        <header class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="data:image/png;base64,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" alt="Evreka Logo" class="h-10">
+                <h1 class="text-2xl font-bold text-gray-800">Route Shift Analysis</h1>
+            </div>
+            <p class="text-gray-600 text-sm hidden md:block">Compare baseline vs. scenario to analyze impacts on cost, time, and efficiency.</p>
+        </header>
+        
+        <main class="space-y-8">
+            <!-- Controls Section -->
+            <div class="card !p-0">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex gap-x-6 px-6">
+                        <button id="paramsTabBtn" class="tab-active py-4 px-1 text-sm font-medium border-b-2">Parameters</button>
+                        <button id="stopsTabBtn" class="tab-inactive py-4 px-1 text-sm font-medium border-b-2">All Route Stops</button>
+                    </nav>
+                </div>
+                <div id="paramsView" class="p-6 space-y-6">
+                    <!-- Time & Traffic Section -->
+                    <details open class="border rounded-md p-4">
+                        <summary class="font-semibold cursor-pointer">Time & Traffic</summary>
+                        <div class="mt-4 space-y-4 border-t pt-4">
+                            <div class="input-group">
+                                <div><label class="label">Baseline Start Time</label><input id="startBaseline" type="time" class="input" value="09:00"></div>
+                                <div><label class="label">Scenario Start Time</label><input id="startScenario" type="time" class="input" value="17:00"></div>
+                            </div>
+                            <div class="input-group">
+                                <div><label class="label">Avg. Speed (km/h)</label><input id="avgSpeed" type="number" class="input" value="40"></div>
+                                <div><label class="label">Road Factor</label><input id="roadFactor" type="number" class="input" value="1.3" step="0.1"></div>
+                            </div>
+                            <div>
+                                <label class="label">Default Service Time (min)</label>
+                                <input id="defaultServiceTime" type="number" class="input" value="15">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="label !mb-0">Traffic Schedule</label>
+                                    <span id="trafficValidator" class="text-xs font-bold"></span>
+                                </div>
+                                <div id="trafficScheduleContainer" class="space-y-2"></div>
+                                <div class="flex gap-2 mt-2">
+                                    <button id="addTrafficRow" class="text-sm btn btn-secondary flex-grow">Add Interval</button>
+                                    <button id="presetTraffic" class="text-sm btn btn-secondary flex-grow">4-Block Preset</button>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                    <!-- Costs Section -->
+                     <details open class="border rounded-md p-4">
+                        <summary class="font-semibold cursor-pointer">Costs & Currency</summary>
+                        <div class="mt-4 space-y-4 border-t pt-4">
+                            <div class="input-group">
+                                <div>
+                                    <label class="label">Currency</label>
+                                    <select id="currency" class="input">
+                                        <option>USD</option><option>EUR</option><option>GBP</option><option selected>TRY</option><option>SAR</option>
+                                    </select>
+                                </div>
+                                <div><label class="label">Cost per km</label><input id="costPerKm" type="number" class="input" value="12.5"></div>
+                            </div>
+                            <div class="input-group">
+                                 <div><label class="label">Cost per Hour</label><input id="costPerHour" type="number" class="input" value="250"></div>
+                                 <div><label class="label">Failure Penalty</label><input id="failurePenalty" type="number" class="input" value="500"></div>
+                            </div>
+                            <div class="input-group-3">
+                                <div><label class="label">Overtime Threshold (hr)</label><input id="otThreshold" type="number" class="input" value="8"></div>
+                                <div><label class="label">Overtime Multiplier</label><input id="otMultiplier" type="number" class="input" value="1.5" step="0.1"></div>
+                            </div>
+                            <div class="input-group-3">
+                                <div><label class="label">Night Start</label><input id="nightStart" type="time" class="input" value="22:00"></div>
+                                <div><label class="label">Night End</label><input id="nightEnd" type="time" class="input" value="06:00"></div>
+                                <div><label class="label">Night Multiplier</label><input id="nightMultiplier" type="number" class="input" value="1.25" step="0.05"></div>
+                            </div>
+                        </div>
+                    </details>
+                    <!-- Break Section -->
+                    <details class="border rounded-md p-4">
+                        <summary class="font-semibold cursor-pointer">Vehicle Break</summary>
+                        <div class="mt-4 space-y-4 border-t pt-4">
+                            <div class="input-group">
+                                <div><label class="label">Break Start</label><input id="breakStart" type="time" class="input" value="12:00"></div>
+                                <div><label class="label">Break End</label><input id="breakEnd" type="time" class="input" value="13:00"></div>
+                            </div>
+                        </div>
+                    </details>
+                     <!-- Disposal & Capacity Section -->
+                    <details class="border rounded-md p-4">
+                        <summary class="font-semibold cursor-pointer">Disposal & Capacity</summary>
+                        <div class="mt-4 space-y-4 border-t pt-4">
+                             <div><label class="label">Vehicle Capacity (kg)</label><input id="vehicleCapacity" type="number" class="input" value="10000"></div>
+                             <div class="space-y-3 mt-4">
+                                <p class="text-sm font-medium">Disposal Choice:</p>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2"><input type="radio" name="disposalChoice" id="disposalChoiceNone" value="none" checked class="h-4 w-4"><label for="disposalChoiceNone" class="text-sm">No automated disposal trips</label></div>
+                                    <div class="flex items-center gap-2"><input type="radio" name="disposalChoice" id="disposalChoiceEnd" value="end" class="h-4 w-4"><label for="disposalChoiceEnd" class="text-sm">Perform disposal at the end of the route</label></div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="radio" name="disposalChoice" id="disposalChoiceCount" value="count" class="h-4 w-4">
+                                        <label for="disposalChoiceCount" class="text-sm">Every</label>
+                                        <input id="disposalEveryXsp" type="number" class="input w-20 input-sm" value="5" disabled>
+                                        <label for="disposalEveryXsp" class="text-sm">stops</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="radio" name="disposalChoice" id="disposalChoiceCapacity" value="capacity" class="h-4 w-4">
+                                        <label for="disposalChoiceCapacity" class="text-sm">When capacity exceeds</label>
+                                        <input id="capThreshPct" type="number" class="input w-20 input-sm" value="90" disabled>
+                                        <label for="capThreshPct" class="text-sm">%</label>
+                                    </div>
+                                </div>
+                             </div>
+                             <div id="disposalTimeSection" class="hidden mt-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="label !mb-0">Disposal Service Time</label>
+                                    <span id="disposalValidator" class="text-xs font-bold"></span>
+                                </div>
+                                <div id="disposalScheduleContainer" class="space-y-2"></div>
+                                <button id="addDisposalRow" class="text-sm btn btn-secondary mt-2 w-full">Add Interval</button>
+                            </div>
+                        </div>
+                    </details>
+                    <!-- Monte Carlo Section -->
+                    <details class="border rounded-md p-4">
+                        <summary class="font-semibold cursor-pointer">Monte Carlo Analysis</summary>
+                        <div class="mt-4 space-y-4 border-t pt-4">
+                            <div class="flex items-center gap-2">
+                                <input id="runMonteCarlo" type="checkbox" class="h-4 w-4 rounded">
+                                <label for="runMonteCarlo" class="label !mb-0">Enable Stochastic Simulation</label>
+                            </div>
+                            <div id="monteCarloOptions" class="hidden space-y-4 pl-6 border-l-2 ml-2 pt-2">
+                                <div class="input-group">
+                                    <div><label class="label"># of Runs</label><input id="mcRuns" type="number" class="input" value="200"></div>
+                                    <div><label class="label">Std. Deviation (σ)</label><input id="mcSigma" type="number" class="input" value="0.1" step="0.05"></div>
+                                </div>
+                                <p class="text-xs text-gray-500">Perturbs traffic and service times to show a range of likely outcomes (P5-P95).</p>
+                            </div>
+                        </div>
+                    </details>
+                    <button id="runSimBtn" class="w-full btn btn-primary text-lg !mt-8">Run Simulation</button>
+                </div>
+                <div id="stopsView" class="hidden p-6">
+                    <div class="max-h-[600px] overflow-y-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-2 font-semibold">#</th>
+                                    <th class="p-2 font-semibold">SERVICE POINT</th>
+                                    <th class="p-2 font-semibold">LAT</th>
+                                    <th class="p-2 font-semibold">LON</th>
+                                    <th class="p-2 font-semibold">SERVICE TIME (min)</th>
+                                    <th class="p-2 font-semibold">ACTION (Time Window)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stopsTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="loaderContainer" class="hidden h-full items-center justify-center py-20">
+                <div class="text-center">
+                    <div class="loader mx-auto"></div>
+                    <p class="mt-4 text-gray-600 font-semibold">Running simulations, please wait...</p>
+                </div>
+            </div>
+            <div id="resultsContainer" class="hidden space-y-8">
+                <div class="card">
+                    <h2 class="card-header">Scenario Comparison (Shifted vs. Baseline)</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead><tr class="border-b"><th class="p-2 text-left font-semibold">KPI</th><th class="p-2 text-right font-semibold">Baseline</th><th class="p-2 text-right font-semibold">Scenario</th><th class="p-2 text-right font-semibold">Change (Δ)</th></tr></thead>
+                            <tbody id="comparisonTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <div class="card"><h2 class="card-header">Baseline Scenario Details</h2><div id="baselineKpiGrid" class="kpi-grid"></div></div>
+                    <div class="card"><h2 class="card-header">Shifted Scenario Details</h2><div id="scenarioKpiGrid" class="kpi-grid"></div></div>
+                </div>
+                <div class="card">
+                    <h2 class="card-header">Time Breakdown Comparison (Hours)</h2>
+                    <div class="h-96">
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div id="welcomeMessage" class="h-full flex items-center justify-center py-20">
+                <div class="text-center text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v6m-8-12V7a2 2 0 012-2h4a2 2 0 012 2v2m-6 8h.01M12 12h.01M12 16h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <h3 class="mt-2 text-lg font-medium">Ready to Analyze</h3><p class="mt-1">Adjust parameters and click "Run Simulation" to see the results.</p>
+                </div>
+            </div>
+
+            <!-- Explanation Section -->
+            <div class="card space-y-4">
+                 <details>
+                    <summary class="text-xl font-bold text-gray-800 cursor-pointer">Simulation Logic & Explanations</summary>
+                    <div class="mt-4 pt-4 border-t prose max-w-none prose-sm">
+                        <p>This simulation uses a discrete-event model to predict the outcome of a route under different start times and conditions. The simulation clock advances minute-by-minute for travel segments to accurately capture time-dependent factors like traffic.</p>
+                        <h4>Parameters Explained</h4>
+                        <ul>
+                            <li><strong>Baseline/Scenario Start Time:</strong> The departure time from the depot for each of the two simulations being compared.</li>
+                            <li><strong>Avg. Speed & Road Factor:</strong> Base travel speed is adjusted by the road factor to account for typical road conditions (e.g., a factor of 1.3 increases travel time by 30% over a straight-line distance calculation).</li>
+                            <li><strong>Default Service Time (min):</strong> Sets the initial service time for all stops in the "All Route Stops" table. You can then override the time for any specific stop in that table.</li>
+                            <li><strong>Traffic Schedule:</strong> Defines a multiplier for travel time based on the time of day. A factor of 1.4 means travel will take 40% longer during that interval. The schedule must cover a full 24-hour period.</li>
+                            <li><strong>Cost per km/hour:</strong> Basic operational costs used for financial calculations.</li>
+                            <li><strong>Overtime Threshold & Multiplier:</strong> If the total route time (drive + service + break) exceeds the threshold, the extra hours are multiplied by this factor to calculate the overtime cost premium.</li>
+                            <li><strong>Night Window & Multiplier:</strong> This calculates an additional cost premium for any work performed within the specified night hours. The multiplier applies *on top of* the base hourly cost. For example, a 1.25x multiplier adds 25% extra cost for minutes worked at night. This applies to driving, service, and break time.</li>
+                            <li><strong>Vehicle Break:</strong> If the vehicle is driving when the break window starts, the break is taken immediately. If the vehicle is performing a service, the service is completed first, and then the full break duration is taken.</li>
+                            <li><strong>Disposal Choice:</strong> Defines what triggers a trip to the disposal site. You can only choose one trigger: at the end of the route, after a specific number of stops, or when the vehicle's capacity is exceeded.</li>
+                        </ul>
+                        <h4>Outputs Explained</h4>
+                        <ul>
+                            <li><strong>Total Time:</strong> The full duration from depot departure to final return (drive + service + break).</li>
+                            <li><strong>Distance:</strong> Total kilometers traveled, including any trips to the disposal site.</li>
+                            <li><strong>Overtime Hours:</strong> The number of hours worked beyond the specified threshold.</li>
+                            <li><strong>Night Minutes:</strong> Total minutes of work performed within the night window.</li>
+                            <li><strong>Total Cost:</strong> The sum of all calculated costs: (KM Cost) + (Standard Hour Cost + Overtime Premium) + (Night Premium) + (Failure Penalties).</li>
+                            <li><strong>Efficiency (%):</strong> The ratio of productive time (service) to total operational time (service + drive). Higher is better.</li>
+                            <li><strong>Waste per Hour/Km:</strong> Measures the amount of waste collected relative to the time or distance resource spent.</li>
+                        </ul>
+                    </div>
+                 </details>
+            </div>
+        </main>
+    </div>
+
+<script>
+// --- DATA ---
+const routeData = {
+    depotStart: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
+    depotEnd: { id: "Depot", lat: 25.278984, lon: 55.408621, serviceMin: 'N/A' },
+    disposal: { id: "Disposal", lat: 25.157123, lon: 55.436789, serviceMin: 'N/A' },
+    sequence: [
+        { id: "FIRST IVF AND DAY SURGERY CENTRE FZ-LLC / Dubai Health Care City", order: 1, lat: 25.2338, lon: 55.3184, kg: 850 },
+        { id: "FIRST GENOMIX GENE LABORATORY FZ-LLC / Dubai Health Care City", order: 2, lat: 25.2339, lon: 55.3184, kg: 600 },
+        { id: "CLINICA SABAH SPECIALTY HOSPITAL", order: 3, lat: 25.2406, lon: 55.2951, kg: 1200 },
+        { id: "American hospital Dubai Clinic Al Barsha", order: 4, lat: 25.0992, lon: 55.2006, kg: 750 },
+        { id: "Al Zahra Hospital", order: 5, lat: 25.1060, lon: 55.1805, kg: 950 },
+        { id: "American Hospital Dubai Hills", order: 6, lat: 25.1028, lon: 55.2377, kg: 450 },
+        { id: "American Hospital Media City", order: 7, lat: 25.1009, lon: 55.1696, kg: 1500 },
+        { id: "Jumeirah American Clinic / Al Manara Jumeirah", order: 8, lat: 25.1513, lon: 55.2135, kg: 820 },
+        { id: "ALABAMA DENTAL CENTER", order: 9, lat: 25.1550, lon: 55.2166, kg: 900 },
+        { id: "DYNASTY CLINIC L.L.C / Jumeriah Al Safa", order: 10, lat: 25.1659, lon: 55.2329, kg: 1350 },
+        { id: "American hospital Al Khawaneej", order: 11, lat: 25.2345, lon: 55.4731, kg: 880 },
+    ]
+};
+
+// --- DOM ELEMENTS ---
+const runSimBtn = document.getElementById('runSimBtn');
+const loaderContainer = document.getElementById('loaderContainer');
+const resultsContainer = document.getElementById('resultsContainer');
+const welcomeMessage = document.getElementById('welcomeMessage');
+let timeChart = null;
+
+// --- UTILITY FUNCTIONS ---
+const timeToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+};
+const minutesToHourMin = (totalMinutes) => {
+     if (isNaN(totalMinutes)) return "0h 0m";
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.round(totalMinutes % 60);
+    return `${hours}h ${minutes}m`;
+}
+const haversine = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+const randomNormal = (mean, stdDev) => {
+    let u1 = 0, u2 = 0;
+    while (u1 === 0) u1 = Math.random();
+    while (u2 === 0) u2 = Math.random();
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    return z0 * stdDev + mean;
+};
+
+// --- DYNAMIC UI MANAGEMENT ---
+class IntervalManager {
+    constructor(containerId, addBtnId, validatorId, fields) {
+        this.container = document.getElementById(containerId);
+        this.addBtn = document.getElementById(addBtnId);
+        this.validator = document.getElementById(validatorId);
+        this.fields = fields;
+        this.addBtn.addEventListener('click', () => this.addRow());
+        this.container.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-row')) {
+                e.target.closest('.interval-row').remove();
+                this.validate();
+            }
+        });
+        this.container.addEventListener('input', () => this.validate());
+    }
+
+    addRow(data = {}) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 interval-row';
+        row.innerHTML = this.fields.map(field => 
+            `<input type="${field.type}" class="input text-sm" data-field="${field.id}" value="${data[field.id] || ''}" ${field.step ? `step="${field.step}"` : ''} placeholder="${field.placeholder || ''}">`
+        ).join('') + `<button class="btn-danger p-1 rounded-full w-6 h-6 text-xs delete-row">X</button>`;
+        this.container.appendChild(row);
+        this.validate();
+    }
+
+    loadData(data) {
+        this.container.innerHTML = '';
+        data.forEach(item => this.addRow(item));
+    }
+
+    getData() {
+        return Array.from(this.container.querySelectorAll('.interval-row')).map(row => {
+            const item = {};
+            this.fields.forEach(field => {
+                const input = row.querySelector(`[data-field="${field.id}"]`);
+                item[field.id] = field.type === 'time' ? input.value : parseFloat(input.value);
+            });
+            return item;
+        });
+    }
+
+    validate() {
+        const intervals = this.getData().map(item => ({
+            start: timeToMinutes(item.start),
+            end: timeToMinutes(item.end) === 0 ? 1440 : timeToMinutes(item.end)
+        }));
+        if(!this.validator) return;
+        intervals.sort((a, b) => a.start - b.start);
+        
+        let lastEnd = 0;
+        let isValid = true;
+        if (intervals.length === 0) {
+            isValid = false;
+        } else {
+             for (const interval of intervals) {
+                if (interval.start < lastEnd) { isValid = false; break; } // Overlap
+                lastEnd = interval.end;
+            }
+            if (lastEnd < 1440) isValid = false;
+        }
+
+        this.validator.textContent = isValid ? '✅ 24h Covered' : '⚠️ Gaps or Overlap';
+        this.validator.className = `text-xs font-bold ${isValid ? 'text-green-600' : 'text-red-600'}`;
+    }
+}
+
+const trafficManager = new IntervalManager('trafficScheduleContainer', 'addTrafficRow', 'trafficValidator', [{ id: 'start', type: 'time' }, { id: 'end', type: 'time' }, { id: 'value', type: 'number', step: '0.05', placeholder: 'Factor' }]);
+const disposalManager = new IntervalManager('disposalScheduleContainer', 'addDisposalRow', 'disposalValidator', [{ id: 'start', type: 'time' }, { id: 'end', type: 'time' }, { id: 'value', type: 'number', placeholder: 'Minutes' }]);
+
+function applyDefaultServiceTime() {
+    const defaultTime = document.getElementById('defaultServiceTime').value;
+    document.querySelectorAll('#stopsTableBody .service-time-input').forEach(input => {
+        input.value = defaultTime;
+    });
+}
+
+// --- SIMULATION CORE ---
+function runSingleSimulation(params) {
+    let t = params.startTime, distanceKm = 0, driveMin = 0, serviceMinTotal = 0, nightMin = 0, breakMin = 0, loadKg = 0, failCount = 0, disposalCount = 0, spSinceDisposal = 0;
+    let currentLoc = params.route.depotStart;
+    const breakCtx = { start: params.breakStart, end: params.breakEnd, duration: params.breakEnd - params.breakStart, taken: false };
+    if (breakCtx.duration <= 0) breakCtx.taken = true;
+
+    const fullSequence = [...params.route.sequence, { id: "DEPOT_END", ...params.route.depotEnd, isDepot: true }];
+    let sequenceIndex = 0;
+
+    const getNightMinutesInSegment = (start, end) => {
+        const nightStart = params.nightStart, nightEnd = params.nightEnd;
+        if (nightStart === nightEnd) return 0;
+        let overlap = 0;
+        const startMod = start % 1440;
+        const endMod = end % 1440;
+
+        if (nightStart < nightEnd) { // e.g., 06:00 - 22:00
+            if (endMod > startMod) {
+                 overlap += Math.max(0, Math.min(endMod, nightEnd) - Math.max(startMod, nightStart));
+            } else { // wraps around midnight
+                overlap += Math.max(0, Math.min(1440, nightEnd) - Math.max(startMod, nightStart));
+                overlap += Math.max(0, Math.min(endMod, nightEnd) - Math.max(0, nightStart));
+            }
+        } else { // e.g., 22:00 - 06:00
+             if (endMod > startMod) {
+                overlap += Math.max(0, Math.min(endMod, 1440) - Math.max(startMod, nightStart));
+                overlap += Math.max(0, Math.min(endMod, nightEnd) - Math.max(startMod, 0));
+             } else {
+                overlap += Math.max(0, Math.min(1440, 1440) - Math.max(startMod, nightStart));
+                overlap += Math.max(0, Math.min(endMod, nightEnd) - Math.max(0, 0));
+             }
+        }
+        return Math.floor(overlap);
+    };
+    
+    const applyBreak = (startTime) => {
+        if (breakCtx.taken) return 0;
+        const duration = breakCtx.duration;
+        breakMin += duration;
+        nightMin += getNightMinutesInSegment(startTime, startTime + duration);
+        breakCtx.taken = true;
+        return duration;
+    };
+
+    while (sequenceIndex < fullSequence.length) {
+        let target = fullSequence[sequenceIndex];
+        
+        if (params.disposalChoice !== 'none' && !target.isDepot) {
+            const atCapacity = params.disposalChoice === 'capacity' && (loadKg / params.vehicleCapacity * 100) >= params.capThreshPct;
+            const atSpCount = params.disposalChoice === 'count' && spSinceDisposal > 0 && (spSinceDisposal % params.disposalEveryXsp === 0);
+            if(atCapacity || atSpCount) {
+                target = { id: "DISPOSAL", ...params.route.disposal, isDisposal: true };
+            }
+        }
+
+        const distToTarget = haversine(currentLoc.lat, currentLoc.lon, target.lat, target.lon) * params.roadFactor;
+        distanceKm += distToTarget;
+
+        let travelTime = 0, kmTravelled = 0;
+        const kmPerMin = params.avgSpeed / 60;
+
+        while (kmTravelled < distToTarget) {
+            const minuteOfDay = Math.floor(t % 1440);
+            const trafficInterval = params.trafficSchedule.find(i => (i.start <= i.end) ? (minuteOfDay >= i.start && minuteOfDay < i.end) : (minuteOfDay >= i.start || minuteOfDay < i.end));
+            const trafficFactor = trafficInterval ? trafficInterval.value : 1.0;
+            const mcFactor = params.isMonteCarlo ? Math.max(0.2, Math.min(3.0, randomNormal(1, params.mcSigma))) : 1.0;
+            const effectiveSpeed = kmPerMin / (trafficFactor * mcFactor);
+            if (effectiveSpeed <= 0) { travelTime = Infinity; break; }
+            if (!breakCtx.taken && minuteOfDay >= breakCtx.start && minuteOfDay < breakCtx.end) {
+                const breakDuration = applyBreak(t);
+                t += breakDuration;
+                continue;
+            }
+            kmTravelled += effectiveSpeed;
+            travelTime++;
+            t++;
+        }
+        
+        const travelStart = t - travelTime;
+        driveMin += travelTime;
+        nightMin += getNightMinutesInSegment(travelStart, t);
+        currentLoc = target;
+
+        if (target.isDepot) {
+            if(params.disposalChoice === 'end' && loadKg > 0) {
+                 const dist = haversine(currentLoc.lat, currentLoc.lon, params.route.disposal.lat, params.route.disposal.lon) * params.roadFactor;
+                 const time = (dist / (params.avgSpeed / 60)); // Simplified time, traffic not applied to final disposal
+                 const disposalStart = t;
+                 t += time; 
+                 driveMin += time; 
+                 distanceKm += dist; 
+                 loadKg = 0; 
+                 disposalCount++;
+                 nightMin += getNightMinutesInSegment(disposalStart, t);
+            }
+            sequenceIndex++; continue;
+        }
+
+        if (target.isDisposal) {
+            const arrivalMinute = Math.floor(t % 1440);
+            const interval = params.disposalSchedule.find(i => (i.start <= i.end) ? (arrivalMinute >= i.start && arrivalMinute < i.end) : (arrivalMinute >= i.start || arrivalMinute < i.end));
+            const serviceTime = interval ? interval.value : 0;
+            const serviceStart = t;
+            serviceMinTotal += serviceTime; 
+            t += serviceTime;
+            nightMin += getNightMinutesInSegment(serviceStart, t);
+            loadKg = 0; disposalCount++; spSinceDisposal = 0;
+            continue;
+        }
+
+        const arrivalMinute = Math.floor(t % 1440);
+        const tw = params.timeWindows[target.id];
+        if (tw && (arrivalMinute < tw.open || arrivalMinute > tw.close)) { failCount++; sequenceIndex++; continue; }
+        
+        spSinceDisposal++;
+        let serviceDuration = target.serviceMin * (params.isMonteCarlo ? Math.max(0.2, Math.min(3.0, randomNormal(1, params.mcSigma))) : 1.0);
+        const serviceStart = t;
+        if (!breakCtx.taken && (arrivalMinute + serviceDuration) > breakCtx.start) { 
+            const breakTime = applyBreak(t + serviceDuration);
+            t += breakTime;
+        }
+        t += serviceDuration; 
+        serviceMinTotal += serviceDuration;
+        nightMin += getNightMinutesInSegment(serviceStart, t);
+        loadKg += target.kg;
+        sequenceIndex++;
+    }
+
+    const totalMin = driveMin + serviceMinTotal + breakMin;
+    const totalHours = totalMin / 60;
+    const normalHours = Math.min(totalHours, params.otThreshold);
+    const otHours = Math.max(0, totalHours - params.otThreshold);
+    const totalKg = params.route.sequence.reduce((sum, sp) => sp.kg ? sum + sp.kg : sum, 0);
+    const kmCost = distanceKm * params.costPerKm;
+    const hourCost = (normalHours * params.costPerHour) + (otHours * params.costPerHour * params.otMultiplier);
+    const nightCost = (nightMin / 60) * params.costPerHour * (params.nightMultiplier - 1);
+    const failCost = failCount * params.failurePenalty;
+    
+    return {
+        totalMin, distanceKm, driveMin, serviceMin: serviceMinTotal, breakMin, otHours, nightMin, disposalCount, failCount,
+        totalCost: kmCost + hourCost + nightCost + failCost, kmCost, hourCost, nightCost, failCost,
+        efficiency: (driveMin + serviceMinTotal > 0) ? (serviceMinTotal / (driveMin + serviceMinTotal)) * 100 : 0,
+        wastePerHour: totalHours > 0 ? totalKg / totalHours : 0,
+        wastePerKm: distanceKm > 0 ? totalKg / distanceKm : 0,
+    };
+}
+
+// --- UI & MAIN ORCHESTRATION ---
+function getParamsFromUI() {
+    const timeWindows = {};
+    document.querySelectorAll('.tw-input-open').forEach(input => {
+        const id = input.dataset.id;
+        const closeInput = document.querySelector(`.tw-input-close[data-id="${id}"]`);
+        if (input.value && closeInput.value) timeWindows[id] = { open: timeToMinutes(input.value), close: timeToMinutes(closeInput.value) };
+    });
+    
+    const newSequence = routeData.sequence
+      .sort((a,b) => a.order - b.order)
+      .map(sp => {
+        const input = document.querySelector(`.service-time-input[data-order="${sp.order}"]`);
+        return { ...sp, serviceMin: input ? parseFloat(input.value) : 0 };
+    });
+
+    return {
+        startBaseline: timeToMinutes(document.getElementById('startBaseline').value), startScenario: timeToMinutes(document.getElementById('startScenario').value),
+        avgSpeed: parseFloat(document.getElementById('avgSpeed').value), roadFactor: parseFloat(document.getElementById('roadFactor').value),
+        trafficSchedule: trafficManager.getData().map(i => ({...i, start: timeToMinutes(i.start), end: timeToMinutes(i.end) === 0 ? 1440 : timeToMinutes(i.end)})),
+        breakStart: timeToMinutes(document.getElementById('breakStart').value), breakEnd: timeToMinutes(document.getElementById('breakEnd').value),
+        vehicleCapacity: parseFloat(document.getElementById('vehicleCapacity').value),
+        disposalChoice: document.querySelector('input[name="disposalChoice"]:checked').value,
+        disposalEveryXsp: parseInt(document.getElementById('disposalEveryXsp').value), capThreshPct: parseFloat(document.getElementById('capThreshPct').value),
+        disposalSchedule: disposalManager.getData().map(i => ({...i, start: timeToMinutes(i.start), end: timeToMinutes(i.end) === 0 ? 1440 : timeToMinutes(i.end)})),
+        currency: document.getElementById('currency').value,
+        costPerKm: parseFloat(document.getElementById('costPerKm').value), costPerHour: parseFloat(document.getElementById('costPerHour').value), failurePenalty: parseFloat(document.getElementById('failurePenalty').value),
+        otThreshold: parseFloat(document.getElementById('otThreshold').value), otMultiplier: parseFloat(document.getElementById('otMultiplier').value),
+        nightStart: timeToMinutes(document.getElementById('nightStart').value), nightEnd: timeToMinutes(document.getElementById('nightEnd').value), nightMultiplier: parseFloat(document.getElementById('nightMultiplier').value),
+        timeWindows, 
+        route: { ...routeData, sequence: newSequence },
+        isMonteCarlo: document.getElementById('runMonteCarlo').checked, mcRuns: parseInt(document.getElementById('mcRuns').value), mcSigma: parseFloat(document.getElementById('mcSigma').value),
+    };
+}
+
+function runFullSimulation() {
+    const baseParams = getParamsFromUI();
+    if (baseParams.isMonteCarlo) {
+        const baselineResults = Array.from({ length: baseParams.mcRuns }, () => runSingleSimulation({ ...baseParams, startTime: baseParams.startBaseline }));
+        const scenarioResults = Array.from({ length: baseParams.mcRuns }, () => runSingleSimulation({ ...baseParams, startTime: baseParams.startScenario }));
+        const aggregate = (results) => Object.keys(results[0]).reduce((acc, key) => {
+            const values = results.map(r => r[key]).sort((a,b) => a - b);
+            acc[key] = { avg: values.reduce((a,b) => a + b, 0) / values.length, p05: values[Math.floor(values.length * 0.05)], p95: values[Math.floor(values.length * 0.95)] };
+            return acc;
+        }, {});
+        updateUI(aggregate(baselineResults), aggregate(scenarioResults), baseParams);
+    } else {
+        updateUI(runSingleSimulation({ ...baseParams, startTime: baseParams.startBaseline }), runSingleSimulation({ ...baseParams, startTime: baseParams.startScenario }), baseParams);
+    }
+}
+
+function formatValue(value, key, currency) {
+    if (typeof value === 'object' && 'avg' in value) return `${formatValue(value.avg, key, currency)} <span class="text-xs text-gray-500">(${formatValue(value.p05, key, '')}–${formatValue(value.p95, key, '')})</span>`;
+    if (key.toLowerCase().includes('cost') || key.toLowerCase().includes('penalty')) return `${value.toFixed(2)} ${currency}`;
+    if (key.toLowerCase().includes('min')) return minutesToHourMin(value);
+    if (key.endsWith('Km')) return value.toFixed(2) + ' km';
+    if (key.endsWith('Hours')) return value.toFixed(2);
+    if (key.toLowerCase().includes('efficiency')) return `${value.toFixed(1)}%`;
+    if (key.startsWith('wastePer')) return `${value.toFixed(1)} kg`;
+    return Math.round(value);
+}
+
+function updateUI(baseline, scenario, params) {
+    const kpiConfig = [
+        { key: 'totalCost', label: 'Total Cost', lowerIsBetter: true }, { key: 'totalMin', label: 'Total Time', lowerIsBetter: true },
+        { key: 'distanceKm', label: 'Distance', lowerIsBetter: true }, { key: 'breakMin', label: 'Break Time', lowerIsBetter: true },
+        { key: 'efficiency', label: 'Efficiency', lowerIsBetter: false, tooltip: 'Service Time / (Drive Time + Service Time)' },
+        { key: 'disposalCount', label: 'Disposals', lowerIsBetter: true }, { key: 'failCount', label: 'Failures', lowerIsBetter: true },
+        { key: 'wastePerHour', label: 'Waste / Hour', lowerIsBetter: false }, { key: 'wastePerKm', label: 'Waste / Km', lowerIsBetter: false },
+    ];
+    const costBreakdown = [{ key: 'kmCost', label: 'KM Cost' }, { key: 'hourCost', label: 'Hour Cost' }, { key: 'nightCost', label: 'Night Premium' }, { key: 'failCost', label: 'Failure Penalty' }];
+    
+    const renderKpiGrid = (containerId, result) => {
+        const container = document.getElementById(containerId);
+        container.innerHTML = [...kpiConfig, ...costBreakdown].map(({key, label, tooltip}) => {
+            let labelHtml = label;
+            if (tooltip) {
+                labelHtml = `<span class="tooltip">${label} ⓘ<span class="tooltiptext">${tooltip}</span></span>`;
+            }
+            return `<div class="kpi-card"><div class="kpi-label">${labelHtml}</div><div class="kpi-value">${formatValue(result[key], key, params.currency)}</div></div>`;
+        }).join('');
+    };
+    
+    renderKpiGrid('baselineKpiGrid', baseline);
+    renderKpiGrid('scenarioKpiGrid', scenario);
+    
+    document.getElementById('comparisonTableBody').innerHTML = [...kpiConfig, ...costBreakdown].map(({key, label, lowerIsBetter}) => {
+        const valB = typeof baseline[key] === 'object' ? baseline[key].avg : baseline[key];
+        const valS = typeof scenario[key] === 'object' ? scenario[key].avg : scenario[key];
+        const delta = valS - valB;
+        let deltaClass = 'delta-neutral';
+        if (Math.abs(delta) > 0.01) deltaClass = (delta > 0) ? (lowerIsBetter ? 'delta-positive' : 'delta-negative') : (lowerIsBetter ? 'delta-negative' : 'delta-positive');
+        return `<tr class="border-b"><td class="p-2 font-medium">${label}</td><td class="p-2 text-right">${formatValue(baseline[key], key, params.currency)}</td><td class="p-2 text-right">${formatValue(scenario[key], key, params.currency)}</td><td class="p-2 text-right font-semibold ${deltaClass}">${delta >= 0 ? '+' : ''}${formatValue(delta, key, params.currency)}</td></tr>`;
+    }).join('');
+
+    renderTimeChart(baseline, scenario);
+}
+
+function renderTimeChart(baseline, scenario) {
+    const ctx = document.getElementById('timeChart').getContext('2d');
+    const labels = ['Drive Time', 'Service Time', 'Break Time', 'Overtime', 'Night Time'];
+    
+    const getData = (result) => [
+        (typeof result.driveMin === 'object' ? result.driveMin.avg : result.driveMin) / 60,
+        (typeof result.serviceMin === 'object' ? result.serviceMin.avg : result.serviceMin) / 60,
+        (typeof result.breakMin === 'object' ? result.breakMin.avg : result.breakMin) / 60,
+        typeof result.otHours === 'object' ? result.otHours.avg : result.otHours,
+        (typeof result.nightMin === 'object' ? result.nightMin.avg : result.nightMin) / 60,
+    ];
+
+    const baselineData = getData(baseline);
+    const scenarioData = getData(scenario);
+
+    if (timeChart) {
+        timeChart.destroy();
+    }
+    timeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Baseline',
+                    data: baselineData,
+                    backgroundColor: 'rgb(102, 112, 133, 0.8)',
+                    borderColor: 'rgb(102, 112, 133)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Scenario',
+                    data: scenarioData,
+                    backgroundColor: 'rgb(59, 169, 53, 0.8)',
+                    borderColor: 'rgb(59, 169, 53)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Time (Hours)' }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toFixed(2) + ' hours';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function setupEventListeners() {
+    runSimBtn.addEventListener('click', () => {
+        resultsContainer.classList.add('hidden');
+        welcomeMessage.classList.add('hidden');
+        loaderContainer.classList.remove('hidden');
+        setTimeout(() => {
+            try { runFullSimulation(); } catch (e) { console.error("Sim failed:", e); alert("Error during simulation."); } 
+            finally { loaderContainer.classList.add('hidden'); resultsContainer.classList.remove('hidden'); }
+        }, 50);
+    });
+
+    const paramsTabBtn = document.getElementById('paramsTabBtn'), stopsTabBtn = document.getElementById('stopsTabBtn');
+    const paramsView = document.getElementById('paramsView'), stopsView = document.getElementById('stopsView');
+    const switchTabs = (activeTab) => {
+        const isParams = activeTab === 'params';
+        paramsTabBtn.classList.toggle('tab-active', isParams);
+        stopsTabBtn.classList.toggle('tab-active', !isParams);
+        paramsView.classList.toggle('hidden', !isParams);
+        stopsView.classList.toggle('hidden', isParams);
+    };
+    paramsTabBtn.addEventListener('click', () => switchTabs('params'));
+    stopsTabBtn.addEventListener('click', () => switchTabs('stops'));
+
+    document.getElementById('runMonteCarlo').addEventListener('change', (e) => document.getElementById('monteCarloOptions').classList.toggle('hidden', !e.target.checked));
+    
+    document.querySelectorAll('input[name="disposalChoice"]').forEach(radio => radio.addEventListener('change', (e) => {
+        document.getElementById('disposalEveryXsp').disabled = e.target.value !== 'count';
+        document.getElementById('capThreshPct').disabled = e.target.value !== 'capacity';
+        document.getElementById('disposalTimeSection').classList.toggle('hidden', e.target.value === 'none');
+    }));
+
+    document.getElementById('presetTraffic').addEventListener('click', () => {
+        trafficManager.loadData([
+            { start: '00:00', end: '06:00', value: 1.0 },
+            { start: '06:00', end: '12:00', value: 1.35 },
+            { start: '12:00', end: '18:00', value: 1.35 },
+            { start: '18:00', end: '00:00', value: 1.0 },
+        ]);
+    });
+
+    document.getElementById('defaultServiceTime').addEventListener('input', applyDefaultServiceTime);
+}
+
+function populateStopsTable() {
+    const tableBody = document.getElementById('stopsTableBody');
+    const allStops = [routeData.depotStart, ...routeData.sequence.sort((a,b) => a.order - b.order), routeData.disposal];
+    const defaultTime = document.getElementById('defaultServiceTime').value;
+
+    tableBody.innerHTML = allStops.map(sp => {
+        const serviceTimeContent = sp.order
+            ? `<input type="number" class="input input-sm service-time-input" value="${defaultTime}" data-order="${sp.order}">`
+            : 'N/A';
+        
+        return `
+        <tr class="border-b bg-white even:bg-gray-50">
+            <td class="p-2">${sp.order || 'N/A'}</td>
+            <td class="p-2 font-medium">${sp.id}</td>
+            <td class="p-2 font-mono text-xs">${sp.lat.toFixed(4)}</td>
+            <td class="p-2 font-mono text-xs">${sp.lon.toFixed(4)}</td>
+            <td class="p-2">${serviceTimeContent}</td>
+            <td class="p-2">
+                ${sp.order ? `<div class="flex items-center gap-1">
+                    <input type="time" class="input input-sm tw-input-open" data-id="${sp.id}">
+                    <span>-</span>
+                    <input type="time" class="input input-sm tw-input-close" data-id="${sp.id}">
+                </div>` : 'N/A'}
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+// --- INITIALIZATION ---
+function loadDefaultTrafficSchedule() {
+    trafficManager.loadData([
+        { start: '00:00', end: '03:00', value: 1.0 },
+        { start: '03:00', end: '06:00', value: 1.0 },
+        { start: '06:00', end: '09:00', value: 1.0 },
+        { start: '09:00', end: '12:00', value: 1.35 },
+        { start: '12:00', end: '15:00', value: 1.50 },
+        { start: '15:00', end: '18:00', value: 1.35 },
+        { start: '18:00', end: '21:00', value: 1.0 },
+        { start: '21:00', end: '00:00', value: 1.0 },
+    ]);
+}
+
+window.addEventListener('load', () => {
+    loadDefaultTrafficSchedule();
+    disposalManager.loadData([{ start: '00:00', end: '00:00', value: 30 }]);
+    setupEventListeners();
+    populateStopsTable();
+});
+
+</script>
+</body>
+</html>
+
